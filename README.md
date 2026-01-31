@@ -15,7 +15,29 @@ Lets see all the main logical components for our codec:
 
 ### Optical Flow
 
-Given two consecutive frames, the **Optical Flow** quantifies the motion of objects between them. In simple terms, optical flow describes the direction and magnitude (the speed) of the displacement of each pixel from the first frame to the second.
+Given two consecutive frames, the **Optical Flow** quantifies the motion of objects between them. In simple terms, optical flow describes the direction and magnitude (the speed) of the displacement of each pixel from the first frame to the second. An example: 
+
+<p align="center">
+  <img src="images/Football.png" alt="Training Curves" width="80%">
+</p>
+
+The left image shows motion vectors, where the direction and length of each arrow represent the direction and magnitude of the players displacement. The right image shows the corresponding flow magnitude map, highlighting regions with significant motion while suppressing static background areas.
+
+### Warping operation
+
+Using the optical flow vectors, the first image is warped to match the second image. So the **Warping Operation** consists in: shifting each pixel in the first image according to the direction and magnitude given by the flow, effectively predicting where that pixel will be in the next frame. An example:
+
+Aggiungere foto
+
+### Residual
+
+As can be seen from the previous example, warping an image based solely on optical flow often introduces artifacts such as occlusions, ghosting effects, and inaccurate motion estimation in complex regions. For this reason, a residual signal is computed to capture the information that cannot be explained by motion compensation alone. In simple terms, the residual error is computed as the difference between the original frame and its warped prediction. Example: 
+
+Aggiungere foto
+
+### Peak signal-to-noise ratio
+
+
 
 ## References
 
