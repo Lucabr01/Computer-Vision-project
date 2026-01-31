@@ -35,7 +35,34 @@ As can be seen from the previous example, warping an image based solely on optic
 
 Aggiungere foto
 
-### Peak signal-to-noise ratio
+### PSNR (Peak Signal-to-Noise Ratio)
+
+In image and video compression, reconstruction quality is commonly evaluated using the **Mean Squared Error (MSE)**, which measures the average squared difference between the original and reconstructed images. While MSE is simple and directly optimized during training, its values are often difficult to interpret in terms of perceptual quality.
+
+For this reason, the **PSNR** is widely used. PSNR is a logarithmic transformation of the MSE that expresses reconstruction quality in **decibels (dB)**:
+
+PSNR = 10 · log10(MAX² / MSE)
+
+where `MAX` is the maximum possible pixel value (e.g., 255 for 8-bit images).
+
+Intuitively:
+- Lower MSE → Higher PSNR  
+- Higher PSNR → Better reconstruction quality
+
+PSNR is commonly adopted in **lossy image and video codecs** because it provides a normalized and interpretable quality metric, enabling fair comparisons across different codecs and bitrates.
+
+Typical PSNR values for 8-bit images and video are:
+- **< 25 dB**: poor quality, visible artifacts  
+- **25–30 dB**: acceptable quality  
+- **30–35 dB**: good quality  
+- **> 35 dB**: high quality, differences barely noticeable
+
+### Occlusions
+
+
+Occlusions occur when parts of the scene become visible or invisible between consecutive frames due to object or camera motion. In these regions, no valid pixel correspondence exists between frames.
+
+This is a problem for motion-based warping, since the warped frame relies on optical flow to map pixels from a previous frame. When occlusions are present, the motion compensation cannot correctly predict these areas, leading to visual artifacts and reconstruction errors. For this reason, occluded regions must be handled separately, typically through residual information or refinement networks.
 
 
 
