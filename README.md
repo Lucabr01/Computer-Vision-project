@@ -97,7 +97,11 @@ DVC and several subsequent works rely on a deep neural network that, given the o
 
 # 2.1 Proposed Architecture
 
-Our codec follows the classical approach but modernizing it adopting various changing. 
+Our codec follows the classical motion–residual paradigm, while introducing several modern enhancements. The following image illustrates the overall architecture of the proposed codec:
+
+<p align="center">
+  <img src="images/net.png" alt="Our NET" width="80%">
+</p>
 
 ## References
 
