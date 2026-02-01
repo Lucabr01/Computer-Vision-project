@@ -563,7 +563,7 @@ The VAE's feature and hyperprior channels are set to 192 following **M-LVC**.
 
 The full traing code: https://www.kaggle.com/code/lucabrunetti/motion-vae-stage-1
 
-The first stage trained for 15 epochs on Kaggle's P100 GPU ( circa 12h ). Here the goal was to minimize the rate distortion loss on reconstructing the flow on two consecutive frames (Vimeo90k Triplets).
+The first stage trained for 15 epochs on Kaggle's P100 GPU ( circa 14h ). Here the goal was to minimize the rate distortion loss on reconstructing the flow on two consecutive frames (Vimeo90k Triplets).
 
 ### Second stage 
 
@@ -580,6 +580,16 @@ In the last stage the `max_flow` is still set to 100 but the flow is computed on
 AGGIUNGERE CODICE
 
 This stage was done on the Septuplet Dataset and trained for 20 epochs on a RTX 4090 (circa 10h, Septuplet dataset is significally bigger then the triplets subset). The needs to a GPU ugrade was mainly a VRAM and batch size bottlenck with the kaggles's one ( with the septuplets the P100 can only handle a 4 batch size). 
+
+---
+
+In the end the proccess took 38h of training to be completed, an example of a reconstruction with the fully trained net of a motion vector:
+
+AGGIUNGERE FOTO
+
+## Motion Refinement NET
+
+
 
 ---
 
