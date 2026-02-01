@@ -4,6 +4,9 @@
    1. [Fundamentals](#11-fundamentals)
 2. [Codec Architecture](#2-codec-architecture)
    1. [Proposed Architecture](#21-proposed-architecture)
+3. [Training breakthrough](#3-training-breakthrough)
+   1. [Networks initialization](#31-networks-initialization)
+   2. [Joint training](#32-joint-training)
 
 # 1. Introduction
 
@@ -466,6 +469,76 @@ class AdaptiveRefiNET(nn.Module):
         return refined.clamp(0, 1)
 ```
 
+---
+
+# 3. Training breakthrough
+
+
+The training of the full codec is a multi-stage process. As done in **DVC** and **M-LVC**, it consists of two necessary phases:
+
+1. **Network Initialization**  
+   Each component is first trained independently to initialize the weights and learn its specific sub-task (flow refinement, residual compression, residual refinement, etc.).
+
+2. **Joint Training**  
+   All networks are then fine-tuned together end-to-end to optimize the overall rate–distortion performance of the codec, allowing the components to adapt to each other and work as a coherent system.
+
+Before detailing the training process, the following *loss functions* must be introduced.
+
+### Rate–Distortion Loss
+
+The Rate–Distortion (RD) loss is the core objective used to train the compression networks. It balances two competing goals:
+
+- minimizing the bitrate required to encode the latent representations,
+- minimizing the reconstruction error between the original and reconstructed frames.
+
+It is typically defined as:
+
+L = R + λ · D
+
+where:
+- **R** is the estimated bitrate obtained from the likelihoods of the latents,
+- **D** is the distortion term (usually MSE or MS-SSIM),
+- **λ** controls the trade-off between compression efficiency and reconstruction quality.
+
+A higher λ prioritizes quality, while a lower λ favors stronger compression.
+
+---
+
+### MS-SSIM
+
+MS-SSIM (Multi-Scale Structural Similarity) is a perceptual metric that measures image similarity by comparing structures, luminance, and contrast at multiple scales.
+
+Unlike MSE, which measures pixel-wise differences, MS-SSIM correlates better with human visual perception. For this reason, it is often used as the distortion term in lossy image and video compression.
+
+Using MS-SSIM encourages the model to preserve structural and perceptual details rather than focusing only on minimizing numerical pixel error.
+
+# 3.1 Networks initialization
+
+For each network, we describe the training process, provide a link to the corresponding code, and show the visual effect of the module.
+
+We begin by introducing the datasets used:
+
+## Vimeo90k Triplets and Septuplets 
+
+We use the Vimeo90k dataset, available at: http://toflow.csail.mit.edu/
+
+This dataset is particularly well suited for learned video compression because it provides short, high-quality frame sequences with moderate motion, limited camera shake, and consistent scene content. These characteristics make it ideal for training models based on motion estimation, warping, and residual prediction.
+
+Two specific subsets are used:
+
+- Triplets: sequences of three consecutive frames.
+These are used for training components that require only a single temporal reference, such as optical flow and residual compression.
+
+- Septuplets: sequences of seven consecutive frames.
+These are used whenever extended temporal context is required, especially for the refinement networks that exploit the 4-frame history buffer. The additional frames allow the model to learn how to recover information across occlusions and complex motion patterns.
+
+The structure of Vimeo90k provides clean temporal continuity while keeping sequences short enough to allow efficient training and rapid experimentation.
+
+## Optical Flow VAE training
+
+
+
+---
 
 ## References
 
