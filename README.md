@@ -105,7 +105,22 @@ Our codec follows the classical motion–residual paradigm, while introducing se
 
 Instead of a training a motion estimation network (very hard and long to do), we rely on **[RAFT: Recurrent All-Pairs Field Transforms for Optical Flow](https://arxiv.org/pdf/2003.12039)** [4] to compute the optical flow. We adopt the small configuration of RAFT, which provides state-of-the-art optical flow accuracy with a lightweight model, enabling faster inference and training.
 
-Lets see all the trained components model in detail:
+Lets see all the architecture components in detail:
+
+## 4-Frame History Buffer
+
+The last four reconstructed frames are stored in a buffer and used as temporal context for the refinement networks.
+
+The key idea is that the information needed to correctly reconstruct a region in the current frame is not always present in the immediately previous frame $x_{t-1}$. Due to motion and occlusions, parts of the scene may disappear and reappear across multiple frames [2].
+
+Using a 4-frame buffer allows the model to:
+- recover details that were visible in earlier frames but are occluded in $x_{t-1}$
+- improve motion refinement by observing longer temporal patterns
+- reduce ambiguity in regions where optical flow is unreliable
+
+This is particularly effective for handling **occlusions**, where the warped prediction alone is insufficient.
+
+Limiting the buffer to four frames provides a good trade-off between richer temporal context and computational efficiency. A larger history would increase complexity with diminishing benefits, while a single frame would not provide enough information to resolve complex motion scenarios.
 
 ## Flow and Residual Encoder-Decoder VAEs 
 
