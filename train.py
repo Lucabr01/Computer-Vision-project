@@ -28,7 +28,7 @@ try:
     RAFT_AVAILABLE = True
 except ImportError:
     RAFT_AVAILABLE = False
-    print("  RAFT not found. Using dummy flow for demonstration.")
+    print("⚠️  RAFT not found. Using dummy flow for demonstration.")
 
 def train_joint():
     # 1. SETUP DEVICE & DIRS
@@ -42,9 +42,10 @@ def train_joint():
     
     # --- MOTION BRANCH (Larger Capacity: N=192) ---
     # Based on pre-trained weights 'FlowVAE_finetune_ep11.pth'
-    print(" Init Motion Model (N=192, M=192)")
+    print("🔹 Init Motion Model (N=192, M=192)")
     motion_model = ScaleHyperprior(N=192, M=192, in_channels=2, out_channels=2).to(device)
     
+    # Refines the optical flow (2 channels) using history (12 channels)
     refine_model = MotionRefineNET().to(device)
     
     # --- RESIDUAL BRANCH (Standard Capacity: N=128) ---
@@ -71,12 +72,12 @@ def train_joint():
     if os.path.exists(Config.PRETRAINED_WEIGHTS['adaptive']):
         robust_load(adaptive_model, Config.PRETRAINED_WEIGHTS['adaptive'])
     else:
-        print(" Adaptive weights not found (starting from scratch)")
+        print("⚠️ Adaptive weights not found (starting from scratch)")
 
     if os.path.exists(Config.PRETRAINED_WEIGHTS['post']):
         robust_load(post_model, Config.PRETRAINED_WEIGHTS['post'])
     else:
-        print(" Post-process weights not found (starting from scratch)")
+        print("⚠️ Post-process weights not found (starting from scratch)")
 
     # 4. OPTIMIZER SETUP (Split Net vs Aux)
     # Critical: CompressAI models have "auxiliary" parameters (quantiles) 
@@ -148,29 +149,38 @@ def train_joint():
             flow_hat = motion_out["x_hat"]
             motion_likelihoods = motion_out["likelihoods"]
             
-            # --- C. WARPING & REFINEMENT ---
-            frame2_pred = flow_warp(frame1, flow_hat)
-            
-            # Zero-history for pair-based training
+            # --- C. REFINEMENT (Corrected Logic) ---
+            # We refine the FLOW, not the image.
+            # Input: Flow (2) + History (12) = 14 Channels.
+            # This matches the pretrained weights of RefineNET.
             history_dummy = torch.zeros(frame1.shape[0], 12, frame1.shape[2], frame1.shape[3]).to(device)
-            frame2_refined = refine_model(frame2_pred, history_dummy)
             
-            # --- D. RESIDUAL CODING ---
-            residual = frame2 - frame2_refined
+            flow_refined = refine_model(flow_hat, history_dummy)
+            
+            # --- D. WARPING (Using Refined Flow) ---
+            # Warp Frame1 using the high-quality refined flow
+            frame2_pred = flow_warp(frame1, flow_refined)
+            
+            # --- E. RESIDUAL CODING ---
+            # Calculate residual against the refined prediction
+            residual = frame2 - frame2_pred
+            
             res_out = residual_model(residual)
             res_hat = res_out["x_hat"]
             res_likelihoods = res_out["likelihoods"]
             
             recon_residual = res_hat 
             
-            # --- E. ADAPTIVE FUSION ---
+            # --- F. ADAPTIVE FUSION ---
             mask = compute_adaptive_mask(recon_residual)
-            frame_recon = adaptive_model(recon_residual, frame2_refined, mask, history_dummy)
             
-            # --- F. POST-PROCESSING ---
+            # Fusion uses the reconstructed residual and the warped prediction
+            frame_recon = adaptive_model(recon_residual, frame2_pred, mask, history_dummy)
+            
+            # --- G. POST-PROCESSING ---
             final_image = post_model(frame_recon)
             
-            # --- G. MAIN LOSS & BACKPROP ---
+            # --- H. MAIN LOSS & BACKPROP ---
             combined_likelihoods = {**motion_likelihoods, **res_likelihoods}
             output_dict = {
                 "x_hat": final_image,
@@ -183,7 +193,7 @@ def train_joint():
             torch.nn.utils.clip_grad_norm_(net_params, 1.0)
             optimizer.step()
             
-            # --- H. AUXILIARY LOSS OPTIMIZATION (Crucial Step) ---
+            # --- I. AUXILIARY LOSS OPTIMIZATION (Crucial Step) ---
             # Update the entropy bottleneck parameters (CDF tables)
             aux_loss = motion_model.aux_loss() + residual_model.aux_loss()
             aux_loss.backward()
