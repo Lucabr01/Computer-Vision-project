@@ -103,7 +103,9 @@ Our codec follows the classical motion–residual paradigm, while introducing se
   <img src="images/net.png" alt="Our NET" width="80%">
 </p>
 
-Lets see all the components model in detail:
+Instead of a training a motion estimation network (very hard and long to do), we rely on **[RAFT: Recurrent All-Pairs Field Transforms for Optical Flow](https://arxiv.org/pdf/2003.12039)** [4] to compute the optical flow. We adopt the small configuration of RAFT, which provides state-of-the-art optical flow accuracy with a lightweight model, enabling faster inference and training.
+
+Lets see all the trained components model in detail:
 
 ## Flow and Residual Encoder-Decoder VAEs 
 
@@ -241,9 +243,9 @@ The `MotionRefineNET` refines the **decompressed optical flow** by predicting a 
 It takes as input the current flow estimate `flow_hat` (2 channels) concatenated with a **temporal context** of the last 4 reconstructed frames (like its done in **M-LVC**), for a total of 14 input channels.
 
 The network is a lightweight ResNet-style model:
-- a small convolutional **stem** to extract features,
-- a stack of residual blocks (with larger dilation in the last blocks to enlarge the receptive field),
-- a `delta_head` that predicts a **flow residual** `delta` (2 channels).
+- a small convolutional **stem** to extract features
+- a stack of residual blocks (with larger dilation in the last blocks to enlarge the receptive field)
+- a `delta_head` that predicts a **flow residual** `delta` (2 channels)
 
 Finally, the refined flow is obtained as:
 `flow_refined = flow_hat + delta`
@@ -297,6 +299,157 @@ class MotionRefineNET(nn.Module):
 
 Group Normalization is used for training stability with small batch sizes (more in details in the training chapter), while the gating mechanism allows the network to apply corrections selectively only in regions where the motion estimation is unreliable.
 
+### Residual Refine NET
+
+The `ResRefiNET` refines the **decompressed residual** by predicting a small correction over it.
+
+The network is a lightweight ResNet-style model:
+- a convolutional **head** to extract features,
+- a stack of residual blocks for stable feature processing,
+- a **tail** convolution that predicts a correction term.
+
+The final output is obtained as:
+
+`residual_refined = residual_hat + correction`
+
+Thanks to the zero-initialization of the last layer, the network starts by behaving like an identity function and gradually learns only the necessary adjustments. This makes the refinement stable and well-suited for residual signals, where only small corrections are required rather than full reconstruction.
+
+```python
+class ResRefiNET(nn.Module):
+    def __init__(self, in_channels=3, mid_channels=64, num_blocks=6):
+        super().__init__()
+
+        self.head = nn.Conv2d(in_channels, mid_channels, kernel_size=3, padding=1)
+
+        self.body = nn.Sequential(
+            *[ResBlock(mid_channels, use_gn=True) for _ in range(num_blocks)]
+        )
+
+        self.tail = nn.Conv2d(mid_channels, in_channels, kernel_size=3, padding=1)
+
+        # Initialize to learn small corrections
+        nn.init.zeros_(self.tail.weight)
+        nn.init.zeros_(self.tail.bias)
+
+    def forward(self, x):
+        identity = x
+        out = self.head(x)
+        out = self.body(out)
+        correction = self.tail(out)
+        return identity + correction
+```
+
+## Final Refinement Net
+
+The final network is responsible for producing the last correction applied to the reconstructed frame (warp + residual).
+
+It takes as input:
+- the 4-frame history
+- the warped frame
+- the reconstructed frame
+- an adaptive mask $M(p)$, where $p$ denotes the residual error magnitude
+
+Again, the goal of this network is not to reconstruct the frame from scratch, but to apply targeted corrections only where the reconstruction is still inaccurate.
+
+---
+
+#### Adaptive Mask Definition
+
+The mask is defined as:
+
+$$
+M(p) = \tanh\left( \lambda \cdot \frac{\|\|\bar{r}_t(p)\|\|_2}{\mu_t + \epsilon} \right)
+$$
+
+where
+
+$$
+\mu_t = \frac{1}{H \cdot W} \sum_{p} \|\|\bar{r}_t(p)\|\|_2
+$$
+
+$$
+\epsilon = 10^{-6}, \quad \lambda \in [0.5, 2.0]
+$$
+
+implemented as:
+
+```python
+def compute_adaptive_mask(residual, lambda_param=1.5, epsilon=1e-6):
+    norm_per_pixel = torch.sqrt(torch.sum(residual ** 2, dim=1, keepdim=True))
+    H, W = residual.shape[2], residual.shape[3]
+    mu = torch.sum(norm_per_pixel, dim=(2, 3), keepdim=True) / (H * W)
+    mask = torch.tanh(lambda_param * norm_per_pixel / (mu + epsilon))
+    return mask
+```
+
+#### Interpretation
+
+For each pixel, the residual magnitude is normalized by the **mean residual error of the frame** and passed through a `tanh` function, producing values in the range $[0, 1]$:
+
+- values close to **0** correspond to well-predicted regions,
+- values close to **1** correspond to areas with high reconstruction error.
+
+This adaptive mask allows the final refinement network to focus its corrections primarily on problematic regions (e.g., occlusions, motion inaccuracies, or complex textures), while leaving already well-reconstructed areas mostly untouched.
+
+The parameters $\lambda$ and $\epsilon$ control the behavior and stability of the adaptive mask:
+
+- **$\lambda$** scales the sensitivity of the mask. Higher values make the mask react more strongly to residual differences, highlighting high-error regions more aggressively. Lower values produce a smoother, less selective mask.
+
+- **$\epsilon$** is a small constant added for numerical stability. It prevents division by very small values of $\mu_t$ when the average residual in the frame is close to zero.
+
+---
+
+The architecture follows a lightweght encoder–residual–decoder model:
+- an **encoder** extracts initial features from the concatenated inputs
+- a stack of residual blocks processes the features stably
+- a **decoder** predicts a small correction term
+
+The correction is applied selectively using the adaptive mask:
+
+`refined = recon + correction × mask`
+
+Normally, before this network is applied, the frame reconstruction is already of good quality. This model ensures that the network focuses its effort only on regions where the reconstruction error is high (e.g., occlusions or motion artifacts), while leaving well-reconstructed areas mostly unchanged. 
+
+Thanks to the temporal context provided by the previous reconstructed frames, this network is particularly effective at handling occlusions. As said before, information that is missing in the current warped prediction may still be present in earlier frames, allowing the model to recover details that cannot be inferred from the immediate frame pair alone.
+
+The encoder–decoder architecture is well suited for this task: the encoder aggregates information from multiple inputs into a compact feature representation, while the decoder translates these features into a precise correction. This structure allows the network to reason globally while applying localized refinements.
+
+```python
+class AdaptiveRefiNET(nn.Module):
+    def __init__(self, base=64, num_blocks=10):
+        super().__init__()
+
+        # Input: recon (3) + warped (3) + mask (1) + history (12) = 19 channels
+        self.encoder = nn.Sequential(
+            nn.Conv2d(19, base, 3, 1, 1),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(base, base, 3, 1, 1),
+            nn.LeakyReLU(0.2, inplace=True)
+        )
+
+        self.res_blocks = nn.ModuleList([
+            SimpleResBlock(base) for _ in range(num_blocks)
+        ])
+
+        self.decoder = nn.Sequential(
+            nn.Conv2d(base, base, 3, 1, 1),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(base, 3, 3, 1, 1)
+        )
+
+    def forward(self, recon, warped, mask, history):
+        x = torch.cat([recon, warped, mask, history], dim=1)
+
+        feat = self.encoder(x)
+
+        for block in self.res_blocks:
+            feat = block(feat)
+
+        correction = self.decoder(feat)
+        refined = recon + correction * mask
+
+        return refined.clamp(0, 1)
+```
 
 
 ## References
@@ -306,3 +459,5 @@ Group Normalization is used for training stability with small batch sizes (more 
 [2] J. Lin, D. Liu, H. Li, and F. Wu, **"M-LVC: Multiple Frames Prediction for Learned Video Compression,"** *Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)*, 2020.
 
 [3] J. Ballé, D. Minnen, S. Singh, S. J. Hwang, and N. Johnston, **"Variational Image Compression with a Scale Hyperprior,"** *International Conference on Learning Representations (ICLR)*, 2018. 
+
+[4] Z. Teed and J. Deng, **"RAFT: Recurrent All-Pairs Field Transforms for Optical Flow,"** *ECCV*, 2020.
