@@ -536,7 +536,50 @@ The structure of Vimeo90k provides clean temporal continuity while keeping seque
 
 ## Optical Flow VAE training
 
+The first model trained is the  **_Motion VAE_**. This network is responsible for compressing and decompressing the optical flow produced by RAFT.
 
+The primary goal of this stage is to maintain a good reconstruction quality of the flow. If the compression is too aggressive, the warped prediction will be inaccurate, directly increasing the residual error. As a consequence, more bits will be required to encode the residual, defeating the purpose of the compression. In the other end the latent must still to be competitive regards the other studies. So we are searching for a sweet spot between bit optimal compression and quality of the flow (mostly on borders). 
+
+The hyperparameters to be chosen during training are:
+- `Lambda` of the rate distortion loss (quality - bitrate tradeoff)
+- The VAE's number of feature and hyperprior channels
+- The `max_flow` value, it represents the maximum displacement (in pixels) that the model is designed to handle and compress.
+
+During the training process this last one was the most critical: Choosing the correct value involves a trade-off between dynamic range and precision:
+- If `max_flow` is too LOW (e.g., 10.0): Pros: Provides high precision for small, subtle movements. Cons: Fast motion exceeds the limit and gets clipped (saturated). The network fails to perceive the true magnitude of the motion, leading to reconstruction artifacts such as ghosting or stuttering in high-speed scenes.
+- If `max_flow` is too HIGH (e.g., 200.0): Pros: Capable of capturing extremely fast motion without clipping. Cons: Common, smaller movements are mapped to tiny numerical values (e.g., $5 / 500 = 0.01$). This leads to quantization errors and numerical instability, making it difficult for the network to learn fine motion details.
+
+In our first experiment the `max_flow` value was set to 20.0 following studies approaches; what we saw during inferences and tests was that for Vimeo's frames it was perfect, but for real video compression with camera motion and bigger movements was a disaster! The clipping was cutting a lot of motion causing a critical residual error -> high bitrate compression.
+
+So for our official training we designed a three stage training:
+
+### First stage 
+
+To initialize the weights of the net we set a `max_flow` of 50.0 allowing the model to learn a sufficiently wide range of motion during the early training phase. Following the strategy adopted in DVC, the value of $\lambda$ in the rate–distortion loss was progressively increased from 256 up to 1024. In the original DVC work, the final value reaches 2048, prioritizing reconstruction quality over bitrate. 
+
+In our case, we intentionally stop at 1024 to favor lower bitrate compression. This choice is motivated by the fact that the flow will later be refined by the subsequent post-processing network, which compensates for the slightly more aggressive compression applied at this stage.
+
+The VAE's feature and hyperprior channels are set to 192 following **M-LVC**.
+
+The full traing code: https://www.kaggle.com/code/lucabrunetti/motion-vae-stage-1
+
+The first stage trained for 15 epochs on Kaggle's P100 GPU ( circa 12h ). Here the goal was to minimize the rate distortion loss on reconstructing the flow on two consecutive frames (Vimeo90k Triplets).
+
+### Second stage 
+
+In the second stage, the `max_flow` is increased to 100, and the optical flow to be reconstructed is computed between frames separated by a gap of two time steps. This introduces larger motion patterns, allowing the network to learn how to handle more challenging displacements and improving its generalization to higher-motion scenarios.
+
+The full traing code: https://www.kaggle.com/code/lucabrunetti/motion-vae-stage-2
+
+The second stage trained for 15 epochs on Kaggle's P100 GPU ( circa 14h ).
+
+### Last stage
+
+In the last stage the `max_flow` is still set to 100 but the flow is computed on a four time step gap.
+
+AGGIUNGERE CODICE
+
+This stage was done on the Septuplet Dataset and trained for 20 epochs on a RTX 4090 (circa 10h, Septuplet dataset is significally bigger then the triplets subset). The needs to a GPU ugrade was mainly a VRAM and batch size bottlenck with the kaggles's one ( with the septuplets the P100 can only handle a 4 batch size). 
 
 ---
 
