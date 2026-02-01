@@ -103,8 +103,206 @@ Our codec follows the classical motion–residual paradigm, while introducing se
   <img src="images/net.png" alt="Our NET" width="80%">
 </p>
 
+Lets see all the components model in detail:
+
+## Flow and Residual Encoder-Decoder VAEs 
+
+The autoencoder architecture we've chosen is the one proposed in **[Variational Image Compression with a Scale Hyperprior](https://arxiv.org/pdf/1802.01436)** [3], and it is used to compress both the optical flow and the residual error.
+
+In our setting, the decoder does not need to reconstruct an image from scratch, since it already relies on a strong prior given by the previously reconstructed frame $x_{t-1}$. This makes the hyperprior architecture particularly suitable: it is designed to preserve structural information while achieving high compression efficiency by modeling the spatial dependencies of the latent representation.
+
+As highlighted in the original paper, the scale hyperprior allows a more accurate entropy model of the latent features, resulting in better rate–distortion performance. This property is especially beneficial in our case, where the information to be encoded (flow and residual) is already structured and correlated with the reference frame.
+
+The implementation is based on the Scale Hyperprior model provided by [CompressAI - Model Documentation](https://interdigitalinc.github.io/CompressAI/models.html):
+
+
+```python
+class ScaleHyperprior(CompressionModel):
+    def __init__(self, N, M, in_channels=2, out_channels=2, **kwargs):
+        super().__init__(**kwargs)
+
+        self.entropy_bottleneck = EntropyBottleneck(N)
+
+        # Analysis transform
+        self.g_a = nn.Sequential(
+            conv(in_channels, N),
+            GDN(N),
+            conv(N, N),
+            GDN(N),
+            conv(N, N),
+            GDN(N),
+            conv(N, M),
+        )
+
+        # Synthesis transform
+        self.g_s = nn.Sequential(
+            deconv(M, N),
+            GDN(N, inverse=True),
+            deconv(N, N),
+            GDN(N, inverse=True),
+            deconv(N, N),
+            GDN(N, inverse=True),
+            deconv(N, out_channels),
+        )
+
+        # Hyperprior analysis
+        self.h_a = nn.Sequential(
+            conv(M, N, stride=1, kernel_size=3),
+            nn.ReLU(inplace=True),
+            conv(N, N),
+            nn.ReLU(inplace=True),
+            conv(N, N),
+        )
+
+        # Hyperprior synthesis
+        self.h_s = nn.Sequential(
+            deconv(N, N),
+            nn.ReLU(inplace=True),
+            deconv(N, N),
+            nn.ReLU(inplace=True),
+            conv(N, M, stride=1, kernel_size=3),
+            nn.ReLU(inplace=True),
+        )
+
+        self.gaussian_conditional = GaussianConditional(None)
+        self.N = int(N)
+        self.M = int(M)
+
+    @property
+    def downsampling_factor(self) -> int:
+        return 2 ** 4
+
+    def forward(self, x):
+        y = self.g_a(x)
+        z = self.h_a(torch.abs(y))
+        z_hat, z_likelihoods = self.entropy_bottleneck(z)
+        scales_hat = self.h_s(z_hat)
+        y_hat, y_likelihoods = self.gaussian_conditional(y, scales_hat)
+        x_hat = self.g_s(y_hat)
+
+        return {
+            "x_hat": x_hat,
+            "likelihoods": {"y": y_likelihoods, "z": z_likelihoods},
+        }
+
+    @classmethod
+    def from_state_dict(cls, state_dict):
+        N = state_dict["g_a.0.weight"].size(0)
+        M = state_dict["g_a.6.weight"].size(0)
+        in_channels = state_dict["g_a.0.weight"].size(1)
+        out_channels = state_dict["g_s.6.weight"].size(0)
+
+        net = cls(N, M, in_channels=in_channels, out_channels=out_channels)
+        net.load_state_dict(state_dict)
+        return net
+
+    def compress(self, x):
+        y = self.g_a(x)
+        z = self.h_a(torch.abs(y))
+
+        z_strings = self.entropy_bottleneck.compress(z)
+        z_hat = self.entropy_bottleneck.decompress(z_strings, z.size()[-2:])
+
+        scales_hat = self.h_s(z_hat)
+        indexes = self.gaussian_conditional.build_indexes(scales_hat)
+        y_strings = self.gaussian_conditional.compress(y, indexes)
+
+        return {"strings": [y_strings, z_strings], "shape": z.size()[-2:]}
+
+    def decompress(self, strings, shape):
+        assert isinstance(strings, list) and len(strings) == 2
+
+        z_hat = self.entropy_bottleneck.decompress(strings[1], shape)
+        scales_hat = self.h_s(z_hat)
+        indexes = self.gaussian_conditional.build_indexes(scales_hat)
+        y_hat = self.gaussian_conditional.decompress(strings[0], indexes, z_hat.dtype)
+
+        x_hat = self.g_s(y_hat)
+        return {"x_hat": x_hat}
+```
+
+We slightly modified the original Scale Hyperprior implementation by feeding the absolute value of the latent representation to the hyperprior network (`z = h_a(|y|)`). 
+
+This encourages the hyperprior to model the magnitude (scale) of the features rather than their sign, which is particularly suitable for optical flow and residual representations where the direction information is preserved in the main latent branch.
+
+Additionally, the architecture was extended with configurable `in_channels` and `out_channels` parameters, since the model is used to compress both optical flow (2 channels) and residual error (3 channels). This makes the same Scale Hyperprior backbone adaptable to different types of inputs without altering its core structure.
+
+## Post-proceessing NETs
+
+Like **DVC** and other studies we use two post processing nets to refine both *Optical Flow* and *Residual*. The goal of the **_Flow Refine NET_** is to minimize the difference between the warped prediction and the ground-truth frame. The smaller this error is, the less information the residual needs to encode, directly reducing the number of bits required for its compression. The **_Residual Refine NET_** is a lightweight network made to denoise the decompressed residual before the final reconstruction. 
+
+As discussed before, one limitation of several video codecs is the reliance on large CNNs designed to reconstruct the frame, the flow, or the residual almost entirely from scratch. In our architecture, we instead adopt two lightweight ResNet-based backbones.
+
+ResNets are particularly suitable in this context because they are designed to learn residual corrections over an existing input rather than rebuilding the signal from the ground up. Thanks to their identity-mapping property, they provide stable refinements starting from a strong prior (the decompressed flow and residual), making them both efficient and well-suited for this task.
+
+### Flow Refine NET
+
+The `MotionRefineNET` refines the **decompressed optical flow** by predicting a small correction term.  
+It takes as input the current flow estimate `flow_hat` (2 channels) concatenated with a **temporal context** of the last 4 reconstructed frames (like its done in **M-LVC**), for a total of 14 input channels.
+
+The network is a lightweight ResNet-style model:
+- a small convolutional **stem** to extract features,
+- a stack of residual blocks (with larger dilation in the last blocks to enlarge the receptive field),
+- a `delta_head` that predicts a **flow residual** `delta` (2 channels).
+
+Finally, the refined flow is obtained as:
+`flow_refined = flow_hat + delta`
+meaning the model learns **small, stable updates** instead of reconstructing flow from scratch.
+
+```python
+class MotionRefineNET(nn.Module):
+    def __init__(self, base=64, blocks=8, use_gn=True, use_gate=True):
+        super().__init__()
+
+        # Input: 2 (Flow) + 12 (History: t-1, t-2, t-3, t-4) = 14 channels
+        in_ch = 14
+
+        self.stem = nn.Sequential(
+            nn.Conv2d(in_ch, base, 3, padding=1),
+            nn.ReLU(inplace=True)
+        )
+
+        body = []
+        for i in range(blocks):
+            dil = 1 if i < blocks - 2 else 2
+            body.append(ResBlock(base, dilation=dil, use_gn=use_gn))
+
+        self.body = nn.Sequential(*body)
+
+        # Predict a correction (delta) for the flow
+        self.delta_head = nn.Conv2d(base, 2, 3, padding=1)
+        nn.init.zeros_(self.delta_head.weight)
+        nn.init.zeros_(self.delta_head.bias)
+
+        self.use_gate = use_gate
+        if use_gate:
+            self.gate_head = nn.Conv2d(base, 1, 3, padding=1)
+            nn.init.zeros_(self.gate_head.weight)
+            nn.init.zeros_(self.gate_head.bias)
+
+    def forward(self, flow_hat, history_4f):
+        x = torch.cat([flow_hat, history_4f], dim=1)
+
+        f = self.stem(x)
+        f = self.body(f)
+
+        delta = self.delta_head(f)
+
+        if self.use_gate:
+            gate = torch.sigmoid(self.gate_head(f))
+            delta = gate * delta
+
+        return flow_hat + delta
+```
+
+Group Normalization is used for training stability with small batch sizes (more in details in the training chapter), while the gating mechanism allows the network to apply corrections selectively only in regions where the motion estimation is unreliable.
+
+
+
 ## References
 
 [1] G. Lu, W. Ouyang, D. Xu, X. Zhang, C. Cai, Z. Gao. **"DVC: An End-to-End Deep Video Compression Framework."** *Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)*, 2019.
 
 [2] J. Lin, D. Liu, H. Li, and F. Wu, **"M-LVC: Multiple Frames Prediction for Learned Video Compression,"** *Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)*, 2020.
+
+[3] J. Ballé, D. Minnen, S. Singh, S. J. Hwang, and N. Johnston, **"Variational Image Compression with a Scale Hyperprior,"** *International Conference on Learning Representations (ICLR)*, 2018. 
