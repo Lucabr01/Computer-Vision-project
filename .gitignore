@@ -1,0 +1,27 @@
+# --- Python Garbage ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Virtual Environments ---
+venv/
+env/
+.env
+
+# --- VS Code Settings ---
+.vscode/
+
+# --- OS Junk ---
+.DS_Store
+Thumbs.db
+
+# --- Large Files (NON CARICARE MAI QUESTI) ---
+# Ignoriamo i pesi e i dataset, sono troppo pesanti per Git
+weights/
+*.pth
+datasets/
+vimeo_septuplet/
+kinetics/
+*.mp4
+*.avi
