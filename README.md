@@ -577,19 +577,36 @@ The second stage trained for 15 epochs on Kaggle's P100 GPU ( circa 14h ).
 
 In the last stage the `max_flow` is still set to 100 but the flow is computed on a four time step gap.
 
-AGGIUNGERE CODICE
-
 This stage was done on the Septuplet Dataset and trained for 20 epochs on a RTX 4090 (circa 10h, Septuplet dataset is significally bigger then the triplets subset). The needs to a GPU ugrade was mainly a VRAM and batch size bottlenck with the kaggles's one ( with the septuplets the P100 can only handle a 4 batch size). 
 
 ---
 
 In the end the proccess took 38h of training to be completed, an example of a reconstruction with the fully trained net of a motion vector:
 
-AGGIUNGERE FOTO
+<p align="center">
+  <img src="images/test1.png" alt="Our NET" width="50%"><br>
+  <img src="images/test2.png" alt="Our NET" width="50%"><br>
+  <img src="images/test3.png" alt="Our NET" width="50%">
+</p>
+
+The latent is compressed more than 880x from the flowat32 RAFT's output sti mantaining good quality. Full tests file can be found in the tests directory as `flow_comparison.zip`
 
 ## Motion Refinement NET
 
+The network to postprocess the decompressed flow was trained to minimize the warped frame MSE w.r.t the groundtruth frame. Training was done for 20 epochs between kaggle's P100 and the RTX 4090 (circa 18h). The dataset used was the Septuplets in order to give the
 
+The training code: https://www.kaggle.com/code/lucabrunetti2/motion-post-processing-net
+
+Below an example of the output of the network. As can be seen below, the refined flow, thanks to the temporal context, is able to better capture the motion patterns of the scene, producing a more coherent and accurate motion field compared to the initial decompressed flow.
+
+<p align="center">
+  <img src="images/w1.png" alt="Our NET" width="60%"><br>
+  <img src="images/w2.png" alt="Our NET" width="60%">
+</p>
+
+It is easy to notice that the warped frame alone is not sufficient for an optimal reconstruction. Visible ghosting artifacts can be observed, especially around the moving leg. This is precisely why the residual error is necessary.
+
+The warped reconstruction achieves a PSNR of 28.54 dB, while reconstruction quality is generally considered acceptable from 30 dB and above.
 
 ---
 
