@@ -610,8 +610,20 @@ The warped reconstruction achieves a PSNR of 28.54 dB, while reconstruction qual
 
 ## Residual VAE training
 
+The training of the Residual VAE focuses on compressing the error between the original frame and the warped prediction. This is the most critical component for achieving high fidelity.
 
+We initially validated the architecture on a reduced subset of the Vimeo-90k dataset Septuplets (approx. 9GB vs the full 88GB) to ensure rapid iteration and verify training stability. Training was done for 10 epochs on kaggle's P100.
 
+To prevent the network from learning trivial identity mappings, we adopted a **"Hard Mode" Training Strategy**. Instead of computing the residual between consecutive frames ($t$ and $t+1$), we compute it with a temporal gap of **2 frames** ($t$ and $t+2$).
+
+This forces the Residual VAE to work harder, learning to encode complex structures and occlusion errors efficiently. The model showed **rapid convergence**, reaching a performance plateau after just 5 epochs.
+
+**Results:**
+This strategy proved highly effective. On the Vimeo-90k test set, the module achieved:
+- **Bitrate:** ~0.29 BPP (Outperforming the DVC baseline)
+- **Quality:** ~36.0 dB PSNR (High Fidelity)
+
+**Training Code:** [Kaggle Notebook - Residual VAE Hard Mode](https://www.kaggle.com/code/danielebracoloni/residual-vae-hard-mode-training)
 ---
 
 ## References
