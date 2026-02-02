@@ -16,7 +16,7 @@ The paper implemented in this project is **[DVC: An End-to-End Deep Video Compre
 
 ## 1.1 Fundamentals
 
-Lets see all the main logical components for our codec:
+Let's examine all the main logical components for our codec:
 
 ### Optical Flow
 
@@ -30,7 +30,7 @@ The left image shows motion vectors, where the direction and length of each arro
 
 ### Warping operation
 
-Using the optical flow vectors, the first image is warped to match the second image. So the **Warping Operation** consists in: shifting each pixel in the first image according to the direction and magnitude given by the flow, effectively predicting where that pixel will be in the next frame. An example:
+Using the optical flow vectors, the first image is warped to match the second image. So the **Warping Operation** consists of shifting each pixel in the first image according to the direction and magnitude given by the flow, effectively predicting where that pixel will be in the next frame. An example:
 
 Aggiungere foto
 
@@ -108,7 +108,7 @@ Our codec follows the classical motion–residual paradigm, while introducing se
 
 Instead of a training a motion estimation network (very hard and long to do), we rely on **[RAFT: Recurrent All-Pairs Field Transforms for Optical Flow](https://arxiv.org/pdf/2003.12039)** [4] to compute the optical flow. We adopt the small configuration of RAFT, which provides state-of-the-art optical flow accuracy with a lightweight model, enabling faster inference and training.
 
-Lets see all the architecture components in detail:
+Let's examine all the architecture components in detail:
 
 ## 4-Frame History Buffer
 
@@ -551,7 +551,7 @@ During the training process this last one was the most critical: Choosing the co
 
 In our first experiment the `max_flow` value was set to 20.0 following studies approaches; what we saw during inferences and tests was that for Vimeo's frames it was perfect, but for real video compression with camera motion and bigger movements was a disaster! The clipping was cutting a lot of motion causing a critical residual error -> high bitrate compression.
 
-So for our official training we designed a three stage training:
+So for our final training configuration we designed a three stage training:
 
 ### First stage 
 
@@ -561,7 +561,7 @@ In our case, we intentionally stop at 1024 to favor lower bitrate compression. T
 
 The VAE's feature and hyperprior channels are set to 192 following **M-LVC**.
 
-The full traing code: https://www.kaggle.com/code/lucabrunetti/motion-vae-stage-1
+The full training code: https://www.kaggle.com/code/lucabrunetti/motion-vae-stage-1
 
 The first stage trained for 15 epochs on Kaggle's P100 GPU ( circa 14h ). Here the goal was to minimize the rate distortion loss on reconstructing the flow on two consecutive frames (Vimeo90k Triplets).
 
@@ -569,7 +569,7 @@ The first stage trained for 15 epochs on Kaggle's P100 GPU ( circa 14h ). Here t
 
 In the second stage, the `max_flow` is increased to 100, and the optical flow to be reconstructed is computed between frames separated by a gap of two time steps. This introduces larger motion patterns, allowing the network to learn how to handle more challenging displacements and improving its generalization to higher-motion scenarios.
 
-The full traing code: https://www.kaggle.com/code/lucabrunetti/motion-vae-stage-2
+The full training code: https://www.kaggle.com/code/lucabrunetti/motion-vae-stage-2
 
 The second stage trained for 15 epochs on Kaggle's P100 GPU ( circa 14h ).
 
@@ -581,7 +581,7 @@ This stage was done on the Septuplet Dataset and trained for 20 epochs on a RTX 
 
 ---
 
-In the end the proccess took 38h of training to be completed, an example of a reconstruction with the fully trained net of a motion vector:
+In the end the process took 38h of training to be completed, an example of a reconstruction with the fully trained net of a motion vector:
 
 <p align="center">
   <img src="images/test1.png" alt="Our NET" width="50%"><br>
@@ -589,7 +589,7 @@ In the end the proccess took 38h of training to be completed, an example of a re
   <img src="images/test3.png" alt="Our NET" width="50%">
 </p>
 
-The latent is compressed more than 880x from the flowat32 RAFT's output sti mantaining good quality. Full tests file can be found in the tests directory as `flow_comparison.zip`
+The latent is compressed more than 880x from the flow at32 RAFT's output sti mantaining good quality. Full tests file can be found in the tests directory as `flow_comparison.zip`
 
 ## Motion Refinement NET
 
@@ -625,6 +625,40 @@ This strategy proved highly effective. On the Vimeo-90k test set, the module ach
 
 **Training Code:** [Kaggle Notebook - Residual VAE Hard Mode](https://www.kaggle.com/code/danielebracoloni/residual-vae-hard-mode-training)
 ---
+
+## Residual Refinement NET (Post-Processing)
+
+The final component of our pipeline is the **Residual Refinement Network (`PostProcessNet`)**.
+While the Residual VAE is efficient at encoding the structural error, the quantization process in the latent space inevitably introduces high-frequency noise and reconstruction artifacts (such as ringing or blocking effects).
+
+### Training Strategy
+We trained this network to act as a **Learned Loop Filter** (similar to the Deblocking Filter in H.264/HEVC), but powered by a CNN.
+- **Input:** The "noisy" reconstruction obtained from the frozen VAEs (Warped Frame + Decoded Residual).
+- **Target:** The original Ground-Truth frame.
+- **Constraint:** The weights of RAFT, Motion VAE, and Residual VAE were kept **frozen**.
+
+This forces the network to specialize in **denoising** and artifact removal, learning to correct specific systematic errors introduced by the compression stages without altering the bitrate.
+
+###  Results & Performance Gain
+
+The impact of this module was significant. On our validation set, enabling the Post-Process NET resulted in a massive quality boost:
+
+| Metric | Base Reconstruction | With Post-Process | **Net Gain** |
+| :--- | :--- | :--- | :--- |
+| **PSNR** | 34.01 dB | **35.68 dB** | **+1.67 dB**  |
+| **SSIM** | 0.9196 | **0.9406** | **+0.021** |
+
+Visually, the network successfully smooths out quantization noise while preserving edge sharpness, resulting in a much cleaner final image.
+
+### Drift Analysis (Long-Term Stability)
+A critical challenge in video compression is **Error Propagation (Drift)**. If the codec makes a small error in frame $t$, that error is warped and amplified in frame $t+1$.
+
+We performed an **Autoregressive Test on 100 consecutive frames** (using the model's own output as input for the next step).
+The results show that our architecture is **drift-resistant**:
+- The quality remains stable around **37.5 dB** throughout the sequence.
+- The Refinement Network actively corrects small errors at each step, preventing them from accumulating and diverging.
+
+**Training Code:** [Kaggle Notebook - Post-Process Training](https://www.kaggle.com/code/danielebracoloni/res-motion-vae-post-process)
 
 ## References
 
