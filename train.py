@@ -28,7 +28,7 @@ try:
     RAFT_AVAILABLE = True
 except ImportError:
     RAFT_AVAILABLE = False
-    print("⚠️  RAFT not found. Using dummy flow for demonstration.")
+    print("  RAFT not found. Using dummy flow for demonstration.")
 
 def train_joint():
     # 1. SETUP DEVICE & DIRS
@@ -42,7 +42,7 @@ def train_joint():
     
     # --- MOTION BRANCH (Larger Capacity: N=192) ---
     # Based on pre-trained weights 'FlowVAE_finetune_ep11.pth'
-    print("🔹 Init Motion Model (N=192, M=192)")
+    print(" Init Motion Model (N=192, M=192)")
     motion_model = ScaleHyperprior(N=192, M=192, in_channels=2, out_channels=2).to(device)
     
     # Refines the optical flow (2 channels) using history (12 channels)
@@ -50,7 +50,7 @@ def train_joint():
     
     # --- RESIDUAL BRANCH (Standard Capacity: N=128) ---
     # Based on pre-trained weights 'ResidualVAE_HardMode_Ep4.pth'
-    print("🔹 Init Residual Model (N=128, M=128)")
+    print(" Init Residual Model (N=128, M=128)")
     residual_model = ScaleHyperprior(N=128, M=128, in_channels=3, out_channels=3).to(device)
     
     # --- RECONSTRUCTION BRANCH ---
@@ -72,12 +72,12 @@ def train_joint():
     if os.path.exists(Config.PRETRAINED_WEIGHTS['adaptive']):
         robust_load(adaptive_model, Config.PRETRAINED_WEIGHTS['adaptive'])
     else:
-        print("⚠️ Adaptive weights not found (starting from scratch)")
+        print(" Adaptive weights not found (starting from scratch)")
 
     if os.path.exists(Config.PRETRAINED_WEIGHTS['post']):
         robust_load(post_model, Config.PRETRAINED_WEIGHTS['post'])
     else:
-        print("⚠️ Post-process weights not found (starting from scratch)")
+        print(" Post-process weights not found (starting from scratch)")
 
     # 4. OPTIMIZER SETUP (Split Net vs Aux)
     # Critical: CompressAI models have "auxiliary" parameters (quantiles) 
