@@ -608,6 +608,10 @@ It is easy to notice that the warped frame alone is not sufficient for an optima
 
 The warped reconstruction achieves a PSNR of 28.54 dB, while reconstruction quality is generally considered acceptable from 30 dB and above.
 
+## Residual VAE training
+
+
+
 ---
 
 ## References
