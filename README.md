@@ -624,7 +624,7 @@ This strategy proved highly effective. On the Vimeo-90k test set, the module ach
 - **Quality:** ~36.0 dB PSNR (High Fidelity)
 
 **Training Code:** [Kaggle Notebook - Residual VAE Hard Mode](https://www.kaggle.com/code/danielebracoloni/residual-vae-hard-mode-training)
----
+
 
 ## Residual Refinement NET (Post-Processing)
 
