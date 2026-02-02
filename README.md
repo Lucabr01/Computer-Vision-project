@@ -561,7 +561,7 @@ In our case, we intentionally stop at 1024 to favor lower bitrate compression. T
 
 The VAE's feature and hyperprior channels are set to 192 following **M-LVC**.
 
-The full training code: https://www.kaggle.com/code/lucabrunetti/motion-vae-stage-1
+**Training Code:**  [Kaggle Notebook - Motion Vae Stage 1](https://www.kaggle.com/code/lucabrunetti/motion-vae-stage-1)
 
 The first stage trained for 15 epochs on Kaggle's P100 GPU ( circa 14h ). Here the goal was to minimize the rate distortion loss on reconstructing the flow on two consecutive frames (Vimeo90k Triplets).
 
@@ -569,7 +569,7 @@ The first stage trained for 15 epochs on Kaggle's P100 GPU ( circa 14h ). Here t
 
 In the second stage, the `max_flow` is increased to 100, and the optical flow to be reconstructed is computed between frames separated by a gap of two time steps. This introduces larger motion patterns, allowing the network to learn how to handle more challenging displacements and improving its generalization to higher-motion scenarios.
 
-The full training code: https://www.kaggle.com/code/lucabrunetti/motion-vae-stage-2
+**Training Code:**  [Kaggle Notebook - Motion Vae Stage 2](https://www.kaggle.com/code/lucabrunetti/motion-vae-stage-2)
 
 The second stage trained for 15 epochs on Kaggle's P100 GPU ( circa 14h ).
 
@@ -595,7 +595,7 @@ The latent is compressed more than 880x from the flow at32 RAFT's output sti man
 
 The network to postprocess the decompressed flow was trained to minimize the warped frame MSE w.r.t the groundtruth frame. Training was done for 20 epochs between kaggle's P100 and the RTX 4090 (circa 18h). The dataset used was the Septuplets in order to give the
 
-The training code: https://www.kaggle.com/code/lucabrunetti2/motion-post-processing-net
+**Training Code:**  [Kaggle Notebook - Motion Refinement Net](https://www.kaggle.com/code/lucabrunetti2/motion-post-processing-net)
 
 Below an example of the output of the network. As can be seen below, the refined flow, thanks to the temporal context, is able to better capture the motion patterns of the scene, producing a more coherent and accurate motion field compared to the initial decompressed flow.
 
