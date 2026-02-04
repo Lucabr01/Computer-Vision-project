@@ -1,0 +1,28 @@
+============================================================
+METRICHE - FRAME 5 (con history frames 0-3)
+============================================================
+
+FLOW:
+  MSE (flow_norm vs flow_vae):     0.001941
+
+WARPING:
+  PSNR (warped vs GT):             26.845 dB
+  SSIM (warped vs GT):             0.8327
+
+RESIDUI:
+  MSE (residual_gt vs residual_vae):      0.000650
+  MSE (residual_gt vs residual_refined):  0.000767
+
+RICOSTRUZIONI:
+  PSNR (intermediate vs GT):       31.176 dB
+  SSIM (intermediate vs GT):       0.8778
+  PSNR (final vs GT):              35.056 dB
+  SSIM (final vs GT):              0.9388
+
+RATE-DISTORTION:
+  Motion rate:                     0.0230 bpp
+  Residual rate:                   0.1082 bpp
+  Total rate:                      0.1312 bpp
+  MSE (final vs GT):               0.000312
+  RD Loss (rate + 2048*MSE):       0.770488
+============================================================
