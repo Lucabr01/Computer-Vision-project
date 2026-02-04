@@ -637,7 +637,7 @@ This strategy proved highly effective. On the Vimeo-90k test set, the module ach
 - **Bitrate:** ~0.29 BPP (Outperforming the DVC baseline)
 - **Quality:** ~36.0 dB PSNR (High Fidelity)
 
-**Training Code:** [Kaggle Notebook - Residual VAE Hard Mode](https://www.kaggle.com/code/danielebracoloni/residual-vae-hard-mode-training)
+**Training Code:** [Kaggle Notebook - Residual VAE Hard Mode](https://www.kaggle.com/code/danielebracoloni/residualvae-hard-mode-training)
 
 
 ## Residual Refinement NET (Post-Processing)
