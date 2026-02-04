@@ -892,7 +892,7 @@ We obtain the same quality with a 4x rate compression.
 The model we are now using [reference](https://arxiv.org/abs/2001.01568). Still on the best reconstruction quality: `cheng2020_attn(quality=5, pretrained=True)`
 
 <p align="center">
-  <img src="images/vsCH.PNG" alt="Our NET" width="70%">
+  <img src="images/vsCH.png" alt="Our NET" width="70%">
 </p>
 
 
@@ -903,7 +903,7 @@ The full test summary multiple frames:
 | Method              | PSNR (dB)            | SSIM              | BPP                  |
 |:-------------------:|:--------------------:|:-----------------:|:--------------------:|
 | Our Codec     | 33.5992 ± 0.7844     | 0.9231 ± 0.0131   | 0.1518 ± 0.0159      |
-| cheng2020     | 34.2843 ± 0.9603     | 0.9366 ± 0.0102   | 0.4107 ± 0.4362      |
+| cheng2020     | 34.2843 ± 0.9603     | 0.9366 ± 0.0102   | 0.4107 ± 0.0362      |
 
 
 </p>
