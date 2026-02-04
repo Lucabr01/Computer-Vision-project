@@ -687,6 +687,8 @@ This corrected frame represents the final output of the codec and is trained to 
 
 Full training code on the **_TrainScriptss_** directory as `TrainAdaptiveNET.ipynb`.
 
+The weights of every self trained network can be found [HERE](https://www.kaggle.com/datasets/lucabrunetti2/flowbranch)
+
 # 3.2 Joint training
 
 During the joint training phase, all components of the architecture are fine-tuned together so they can learn to interact as a coherent system. In this stage, the main challenges were:
