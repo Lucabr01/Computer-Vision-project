@@ -640,14 +640,13 @@ This strategy proved highly effective. On the Vimeo-90k test set, the module ach
 
 ## Residual Refinement NET (Post-Processing)
 
-The final component of our pipeline is the **Residual Refinement Network (`PostProcessNet`)**.
+The next component of our pipeline is the **Residual Refinement Network (`PostProcessNet`)**.
 While the Residual VAE is efficient at encoding the structural error, the quantization process in the latent space inevitably introduces high-frequency noise and reconstruction artifacts (such as ringing or blocking effects).
 
 ### Training Strategy
 We trained this network to act as a **Learned Loop Filter** (similar to the Deblocking Filter in H.264/HEVC), but powered by a CNN.
 - **Input:** The "noisy" reconstruction obtained from the frozen VAEs (Warped Frame + Decoded Residual).
 - **Target:** The original Ground-Truth frame.
-- **Constraint:** The weights of RAFT, Motion VAE, and Residual VAE were kept **frozen**.
 
 This forces the network to specialize in **denoising** and artifact removal, learning to correct specific systematic errors introduced by the compression stages without altering the bitrate.
 
