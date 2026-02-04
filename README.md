@@ -846,6 +846,69 @@ In the Left: the adaptive mask computed; In the right: final reconstruction afte
   </table>
 </p
 
+<p align="center">
+
+| PSNR (final vs GT) | SSIM (final vs GT) | Total rate (bpp) |
+|:-------------------:|:------------------:|:-----------------:|
+|      35.056 dB     |       0.9388       |      0.1312       |
+
+</p>
+
+The final quality (35.056 dB at 0.1312 bpp) highlights the impact of using the previous 4 reconstructed frames together with the adaptive mask.  
+The temporal buffer provides memory of the scene, allowing the network to recover textures and details lost due to occlusions and motion boundaries.  
+The adaptive mask guides the refinement to focus on regions where warping is unreliable and residual energy is high.  
+
+So at the end we obtained a very good quality reconstruction with a 100x compression!! 
+
+---
+
+But now we can ask ourself: *why do we need to build a Motion-Residual based codec if we can just compress the images by ouserself?*
+Lets make some comparison between our coded and some of the SOTA level image compressor:
+
+### CompressAI's 2018 SOTA VAE
+
+we using `bmshj2018_hyperprior(quality=5, pretrained=True)`, this model got the same base architecture of our VAEs and was SOTA in 2018. The model with quality 5 is the one with the better quality on CompressAI.
+
+<p align="center">
+  <img src="images/vsCAI.PNG" alt="Our NET" width="70%">
+</p>
+
+Test summary on multiple frames reconstruction:
+
+<p align="center">
+
+| Method              | PSNR (dB)            | SSIM              | BPP                  |
+|:-------------------:|:--------------------:|:-----------------:|:--------------------:|
+| Our Codec     | 33.5992 ± 0.7844     | 0.9231 ± 0.0131   | 0.1518 ± 0.0159      |
+| CAi bmshj2018 | 33.7637 ± 0.6643     | 0.9089 ± 0.0076   | 0.6003 ± 0.0907      |
+
+</p>
+
+
+We obtain the same quality with a 4x rate compression.
+
+### Current SOTA image compressor: **cheng2020_attn** (attention + autoregressive + hyperprior)
+
+The model we are now using [reference](https://arxiv.org/abs/2001.01568). Still on the best reconstruction quality: `cheng2020_attn(quality=5, pretrained=True)`
+
+<p align="center">
+  <img src="images/vsCH.PNG" alt="Our NET" width="70%">
+</p>
+
+
+The full test summary multiple frames:
+
+<p align="center">
+
+| Method              | PSNR (dB)            | SSIM              | BPP                  |
+|:-------------------:|:--------------------:|:-----------------:|:--------------------:|
+| Our Codec     | 33.5992 ± 0.7844     | 0.9231 ± 0.0131   | 0.1518 ± 0.0159      |
+| cheng2020     | 34.2843 ± 0.9603     | 0.9366 ± 0.0102   | 0.4107 ± 0.4362      |
+
+
+</p>
+
+
 ## References
 
 [1] G. Lu, W. Ouyang, D. Xu, X. Zhang, C. Cai, Z. Gao. **"DVC: An End-to-End Deep Video Compression Framework."** *Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)*, 2019.
