@@ -710,6 +710,29 @@ The final model weights can be found [HERE](https://www.kaggle.com/datasets/luca
 
 # 4 Tests and Results
 
+
+<p align="center">
+  <table>
+    <tr>
+      <td align="center" width="45%">
+        <img src="images/im18.png" alt="im19" width="100%">
+      </td>
+      <td align="center" width="45%">
+        <img src="images/im19.png" alt="im20" width="100%">
+      </td>
+    </tr>
+  </table>
+</p>
+
+
+<p align="center">
+  <img src="images/FrameComparison1.PNG" alt="im19" width="100%"><br>
+</p>
+
+<p align="center">
+  <img src="images/FrameComparison2.PNG" alt="im19" width="100%"><br>
+</p>
+
 ## References
 
 [1] G. Lu, W. Ouyang, D. Xu, X. Zhang, C. Cai, Z. Gao. **"DVC: An End-to-End Deep Video Compression Framework."** *Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)*, 2019.
