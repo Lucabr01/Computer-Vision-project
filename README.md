@@ -671,6 +671,19 @@ The results show that our architecture is **drift-resistant**:
 
 **Training Code:** [Kaggle Notebook - Post-Process Training](https://www.kaggle.com/code/danielebracoloni/res-motion-vae-post-process)
 
+## Adaptive Refinement NET
+
+After all the previous networks, the reconstructed frame is already of good quality. The remaining imperfections are mostly fine details, such as ghosting near object boundaries or small artifacts caused by occlusions.
+
+The AdaptiveRefinementNET takes as input the warped frame, the reconstructed frame, the 4-frame history, and the adaptive mask $M(p)$ introduced earlier, and outputs the final reconstruction correction $\Delta$.
+
+This corrected frame represents the final output of the codec and is trained to minimize the MSE loss on the Septuplets dataset with the RTX 4090 (15 epochs for 14h).
+
+<p align="center">
+  <img src="images/adap1.png" alt="Our NET" width="70%">
+</p>
+
+
 ## References
 
 [1] G. Lu, W. Ouyang, D. Xu, X. Zhang, C. Cai, Z. Gao. **"DVC: An End-to-End Deep Video Compression Framework."** *Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)*, 2019.
