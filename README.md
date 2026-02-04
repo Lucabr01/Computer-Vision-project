@@ -703,7 +703,7 @@ For this reason, we opted for the simplest and most stable configuration during 
 
 Train lasted for 18 epoches for about 32 hours (Full Septuplets Dataset, in the other training we used an half).
 
-The training code can be found in the **_TrainScriptss_** directory as `JointTrainRTX5090.ipynb` while the weights here as `FullCodecWeights.pth`
+The training code can be found [HERE](https://www.kaggle.com/datasets/lucabrunetti2/codecjtrainweigths)
 
 
 # 4 Tests and Results
