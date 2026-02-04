@@ -7,6 +7,8 @@
 3. [Training breakthrough](#3-training-breakthrough)
    1. [Networks initialization](#31-networks-initialization)
    2. [Joint training](#32-joint-training)
+4. [Tests and Results](#4-tests-and-results)
+
 
 # 1. Introduction
 
@@ -677,12 +679,18 @@ After all the previous networks, the reconstructed frame is already of good qual
 
 The AdaptiveRefinementNET takes as input the warped frame, the reconstructed frame, the 4-frame history, and the adaptive mask $M(p)$ introduced earlier, and outputs the final reconstruction correction $\Delta$.
 
-This corrected frame represents the final output of the codec and is trained to minimize the MSE loss on the Septuplets dataset with the RTX 4090 (15 epochs for 14h).
+This corrected frame represents the final output of the codec and is trained to minimize the MSE loss on the Septuplets dataset with the RTX 4090 (15 epochs for 14h). The following example show how the mask highlights only the boreders that still needs some details adjustments, keeping the other areas "turned off". The final reconstruction is significally improved from just the warped recontruction with a result of 35dB:
 
 <p align="center">
   <img src="images/adap1.png" alt="Our NET" width="70%">
 </p>
 
+Full training code on the **_TrainScriptss_** directory as `TrainAdaptiveNET.ipynb`.
+
+# 3.2 Joint training
+
+
+# 4 Tests and Results
 
 ## References
 
