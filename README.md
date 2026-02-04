@@ -905,6 +905,7 @@ The full test summary multiple frames:
 | Our Codec     | 33.5992 ± 0.7844     | 0.9231 ± 0.0131   | 0.1518 ± 0.0159      |
 | cheng2020     | 34.2843 ± 0.9603     | 0.9366 ± 0.0102   | 0.4107 ± 0.0362      |
 
+Even againts the SOTA image compressor model, our codec is able to get a 2x compression rate! **That proves the strongness of the Motion-Residual compression approach!**
 
 </p>
 
