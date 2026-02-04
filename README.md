@@ -689,6 +689,20 @@ Full training code on the **_TrainScriptss_** directory as `TrainAdaptiveNET.ipy
 
 # 3.2 Joint training
 
+During the joint training phase, all components of the architecture are fine-tuned together so they can learn to interact as a coherent system. In this stage, the main challenges were:
+
+- the small batch size imposed by the Septuplets dataset
+- the computational cost of RAFT
+- limited time and hardware resources. Training each individual component required more than 100 hours.
+
+The experiments were carried out on an RTX 5090 with 32 GB of VRAM, which was just sufficient to handle the full pipeline. The primary limitation was not model capacity, but the lack of time and resources to extensively explore different configurations (e.g., variable $\lambda$ schedules) or to train on larger raw video datasets such as the [xiph.Org Dwarf Test Media](https://media.xiph.org/video/derf/).
+
+For this reason, we opted for the simplest and most stable configuration during joint training.
+
+Train lasted for 18 epoches for about 32 hours (Full Septuplets Dataset, in the other training we used an half).
+
+The training code can be found in the **_TrainScriptss_** directory as `JointTrainRTX5090.ipynb`
+
 
 # 4 Tests and Results
 
