@@ -671,7 +671,7 @@ The results show that our architecture is **drift-resistant**:
 - The quality remains stable around **37.5 dB** throughout the sequence.
 - The Refinement Network actively corrects small errors at each step, preventing them from accumulating and diverging.
 
-**Training Code:** [Kaggle Notebook - Post-Process Training](https://www.kaggle.com/code/danielebracoloni/res-motion-vae-post-process)
+**Training Code:** [Kaggle Notebook - Post-Process Training](https://www.kaggle.com/code/danielebracoloni/residual-motionvae-post-process)
 
 ## Adaptive Refinement NET
 
