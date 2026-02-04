@@ -710,6 +710,7 @@ The final model weights can be found [HERE](https://www.kaggle.com/datasets/luca
 
 # 4 Tests and Results
 
+First lets run our codec on two frames to see its behavior. Given $$t-1$$ we need to reconstruct the frame $$t$$; we can see that the the girl pictured moves both arms and the right leg:
 
 <p align="center">
   <table>
@@ -724,14 +725,126 @@ The final model weights can be found [HERE](https://www.kaggle.com/datasets/luca
   </table>
 </p>
 
+### Step 1: Compute the flow and Compress it with the **_MotionVAE_**. The results:
 
 <p align="center">
-  <img src="images/FrameComparison1.PNG" alt="im19" width="100%"><br>
+  <table>
+    <tr>
+      <td align="center" width="45%">
+        <img src="images/frametest/03_flow_gt_RAFT.png" alt="raftgt" width="100%">
+      </td>
+      <td align="center" width="45%">
+        <img src="images/frametest/04_flow_after_VAE.png" alt="vaemt" width="100%">
+      </td>
+    </tr>
+  </table>
 </p>
 
 <p align="center">
-  <img src="images/FrameComparison2.PNG" alt="im19" width="100%"><br>
+
+| MSE (flow_norm vs flow_vae) | Motion rate (bpp) |
+|:---------------------------:|:-----------------:|
+|          0.001941           |       0.0230      |
+
 </p>
+
+Clearly the main error is on the border but the compression is enormous! 
+
+### Step 2: Post processing the decompressed flow with his refinement NET:
+
+In the left: the postprocessed flow; In the right: the warped frame based on the postprocessed flow
+
+<p align="center">
+  <table>
+    <tr>
+      <td align="center" width="45%">
+        <img src="images/frametest/05_flow_refined.png" alt="raftgt" width="100%">
+      </td>
+      <td align="center" width="45%">
+        <img src="images/frametest/06_warped_frame.png" alt="vaemt" width="100%">
+      </td>
+    </tr>
+  </table>
+</p>
+
+The post processing enhances the girl's area, in the warped frame the main problem is around the Golf Glove.
+
+<p align="center">
+
+| PSNR (warped vs GT) | SSIM (warped vs GT) |
+|:--------------------:|:--------------------:|
+|      26.845 dB      |        0.8327        |
+
+</p>
+
+The results speaks clear: the warped frame is still far away from a good quality! So the residual is needed.
+
+### Step 3: Compute and compress/decompress the residual error:
+
+<p align="center">
+  <table>
+    <tr>
+      <td align="center" width="45%">
+        <img src="images/frametest/07_residual_gt.png" alt="raftgt" width="100%">
+      </td>
+      <td align="center" width="45%">
+        <img src="images/frametest/08_residual_after_VAE.png" alt="vaemt" width="100%">
+      </td>
+    </tr>
+  </table>
+</p>
+
+<p align="center">
+
+| MSE (residual_gt vs residual_vae) | Residual rate (bpp) |
+|:---------------------------------:|:-------------------:|
+|             0.000650              |        0.1082       |
+
+</p>
+
+The residual reconstruction is visually very good. In the other hand, becouse the warped frame wasn't a good reconstruction (26dB), the error weights way more than the flow.
+
+### Step 4: Post processing the residual and constructiong our first prediction:
+
+<p align="center">
+  <table>
+    <tr>
+      <td align="center" width="45%">
+        <img src="images/frametest/09_residual_refined.png" alt="raftgt" width="100%">
+      </td>
+      <td align="center" width="45%">
+        <img src="images/frametest/10_reconstruction_intermediate.png" alt="vaemt" width="100%">
+      </td>
+    </tr>
+  </table>
+</p
+
+<p align="center">
+
+| PSNR (intermediate vs GT) | SSIM (intermediate vs GT) |
+|:--------------------------:|:--------------------------:|
+|        31.176 dB          |          0.8778           |
+
+</p>
+
+Results speaks clear: with the residual the reconstruction quality is significally enhanced!
+
+### Step 5: Correcting the ghosting and occlusions errors with the occlusion mask:
+
+In the Left: the adaptive mask computed; In the right: final reconstruction after the AdaptiveNET.
+
+<p align="center">
+  <table>
+    <tr>
+      <td align="center" width="45%">
+        <img src="images/frametest/12_adaptive_mask.png" alt="raftgt" width="100%">
+      </td>
+      <td align="center" width="45%">
+        <img src="images/frametest/11_reconstruction_final.png" alt="vaemt" width="100%">
+      </td>
+    </tr>
+  </table>
+</p
 
 ## References
 
