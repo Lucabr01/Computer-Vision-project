@@ -691,7 +691,7 @@ The weights of every self trained network can be found [HERE](https://www.kaggle
 
 # 3.2 Joint training
 
-During the joint training phase, all components of the architecture are fine-tuned together so they can learn to interact as a coherent system. In this stage, the main challenges were:
+During the joint training phase, all components of the architecture are fine-tuned together (minimizing the Rate Distortion on the reconstructed frame) so they can learn to interact as a coherent system. In this stage, the main challenges were:
 
 - the small batch size imposed by the Septuplets dataset
 - the computational cost of RAFT
