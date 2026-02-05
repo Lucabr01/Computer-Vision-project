@@ -970,7 +970,61 @@ These results show that our codec achieves higher reconstruction quality (+ 0.7 
 Despite operating at a lower average bitrate, it produces a higher PSNR and better SSIM, indicating a more efficient use of the latent information.
 This highlights the effectiveness of the refinement networks and the temporal context, which significantly reduce the residual error and improve compression efficiency beyond the original DVC architecture.
 
-## Vimeo90k Test Set.
+## 4.1 Final Evaluation on Vimeo-90k
+
+We performed a final evaluation of our proposed architecture on the entire **Vimeo-90k Test Set** (7,824 sequences). The results demonstrate that our architecture possesses an exceptional capability for preserving structural details even at extremely low bitrates, significantly outperforming the baseline DVC architecture.
+
+Our model achieves an average **PSNR of 37.36 dB** with a bitrate of less than **0.1 bpp**. This represents a gain of approximately **+2.8 dB** over the standard DVC baseline at similar bitrates.
+
+| Method | Dataset | Average BPP | Average PSNR (dB) |
+| :--- | :--- | :--- | :--- |
+| DVC (Baseline) | Vimeo-90k | ~0.10 | ~34.50 |
+| **Ours (Joint Training)** | **Vimeo-90k** | **0.098** | **37.36**  |
+
+<p align="center">
+  <img src="images/vimeo_final_test/3_sota_comparison.png" alt="SOTA Comparison" width="80%">
+  <br>
+  <em>Fig 1: Rate-Distortion comparison against the State-of-the-Art DVC baseline. Our model (Red Star) achieves a massive gain in fidelity.</em>
+</p>
+
+### Stability and Robustness
+To verify the robustness of our codec, we analyzed the distribution of reconstruction quality across the entire test set.
+
+<div align="center">
+  <img src="images/vimeo_final_test/1_quality_distribution.png" alt="Quality Distribution" width="45%">
+  <img src="images/vimeo_final_test/2_rd_scatter.png" alt="RD Scatter" width="45%">
+</div>
+
+* **Left (Quality Distribution):** The PSNR follows a normal distribution shifted towards high quality, with a mean of **37.37 dB**. The narrow variance indicates consistent performance across diverse scenes, avoiding catastrophic failures.
+* **Right (Rate-Distortion):** The scatter plot demonstrates the model's efficiency. It dynamically allocates bits based on scene complexity, maintaining high PSNR (>30 dB) even at extremely low bitrates (<0.05 bpp) for simpler scenes.
+
+---
+
+## 4.2 Qualitative Analysis
+
+We provide visual examples to demonstrate the effectiveness of the **Adaptive Mask** and the **Refinement Network** in real-world scenarios.
+
+### Test Case 1: Semantic Awareness (Face & Details)
+*Sequence: 00002/0649*
+
+<p align="center">
+  <img src="images/vimeo_final_test/demo_seq_100.png" alt="Visual Result Face" width="100%">
+</p>
+
+* **Performance:** 38.74 dB @ 0.049 bpp.
+* **Analysis:** This example highlights the power of the **Adaptive Mask** (far right). The network correctly identifies the human face and the glasses as the "Region of Interest" (yellow/green areas), applying aggressive refinement there while saving bits on the static blurred background. The reconstructed frame preserves high-frequency details like the spectacle frames and facial expressions.
+
+### Test Case 2: Low-Light & High Compression
+*Sequence: 00001/0979*
+
+<p align="center">
+  <img src="images/vimeo_final_test/demo_seq_50.png" alt="Visual Result Dark" width="100%">
+</p>
+
+* **Performance:** 43.19 dB @ 0.033 bpp.
+* **Analysis:** In this challenging low-light scenario, the model achieves **Visually Lossless** quality (43+ dB) with a compression ratio of approximately **700:1** (0.033 bpp). The **Amplified Error Map** (center-right) is nearly black, indicating near-perfect reconstruction. The model intelligently suppresses noise in the dark background, focusing entirely on the subject's movement.
+
+
 
 ## References
 
