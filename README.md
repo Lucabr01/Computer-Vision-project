@@ -32,15 +32,13 @@ The left image shows motion vectors, where the direction and length of each arro
 
 ### Warping operation
 
-Using the optical flow vectors, the first image is warped to match the second image. So the **Warping Operation** consists of shifting each pixel in the first image according to the direction and magnitude given by the flow, effectively predicting where that pixel will be in the next frame. An example:
+Using the optical flow vectors, the first image is warped to match the second image. So the **Warping Operation** consists of shifting each pixel in the first image according to the direction and magnitude given by the flow, effectively predicting where that pixel will be in the next frame.
 
 Aggiungere foto
 
 ### Residual
 
-As can be seen from the previous example, warping an image based solely on optical flow often introduces artifacts such as occlusions, ghosting effects, and inaccurate motion estimation in complex regions. For this reason, a residual signal is computed to capture the information that cannot be explained by motion compensation alone. In simple terms, the residual error is computed as the difference between the original frame and its warped prediction. Example: 
-
-Aggiungere foto
+The warping an image based solely on optical flow often introduces artifacts such as occlusions, ghosting effects, and inaccurate motion estimation in complex regions. For this reason, a residual signal is computed to capture the information that cannot be explained by motion compensation alone. In simple terms, the residual error is computed as the difference between the original frame and its warped prediction. 
 
 ### PSNR (Peak Signal-to-Noise Ratio)
 
