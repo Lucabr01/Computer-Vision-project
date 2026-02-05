@@ -817,7 +817,7 @@ The residual reconstruction is visually very good. In the other hand, becouse th
       </td>
     </tr>
   </table>
-</p
+</p>
 
 <p align="center">
 
@@ -844,7 +844,7 @@ In the Left: the adaptive mask computed; In the right: final reconstruction afte
       </td>
     </tr>
   </table>
-</p
+</p>
 
 <p align="center">
 
@@ -908,6 +908,51 @@ The full test summary multiple frames:
 Even againts the SOTA image compressor model, our codec is able to get a 2x compression rate! **That proves the strongness of the Motion-Residual compression approach!**
 
 </p>
+
+---
+
+## DVG comparison
+
+Now lets compare our results against DVC on the Vimeo's testset and the [Ultra Video Group dataset](https://ultravideo.fi/dataset.html). This last one is a widely used 1080x720 raw video set, only made to test codecs. 
+
+**_NOTE_**: In order to start processing a video sequence, the 4-frame history buffer must be initialized. To do so, we use the `cheng2020` image compression model provided by CompressAI to encode the first four frames.
+
+This follows the classical **I-frame / P-frame** paradigm used in traditional video codecs:
+
+- **I-frames (Intra frames)** are encoded independently, without relying on any previous frame. They provide a reliable starting point for the decoding process and populate the history buffer.
+- **P-frames (Predicted frames)** are instead reconstructed using motion estimation, warping, residuals, and the refinement networks, relying on the previously reconstructed frames stored in the buffer.
+
+In our codec, the first four frames act as I-frames to initialize the temporal context. All subsequent frames are treated as P-frames and reconstructed using the full motion–residual pipeline. As mentioned before, each frame is reconstructed starting from previously reconstructed frames. This means that small reconstruction errors can accumulate over time and progressively degrade the visual quality.
+
+To prevent error propagation, we periodically insert a new I-frame every 30 frames. This effectively resets the reconstruction quality by providing a fresh, independently compressed reference frame, from which subsequent P-frames can be predicted more accurately.
+
+This strategy limits drift over long sequences while maintaining the benefits of motion-based compression for most of the video.
+
+
+## UVG dataset test
+
+We used the public dataset available on kaggle that contains a majority of the set ([here](https://www.kaggle.com/datasets/minhngt02/uvg-yuv)). Evaluated on all of them, those are the results:
+
+<p align="center">
+  <table>
+    <tr>
+      <td align="center" width="45%">
+        <img src="images/psnrUVG.png" alt="raftgt" width="100%">
+      </td>
+      <td align="center" width="45%">
+        <img src="images/bppUVG.png" alt="vaemt" width="100%">
+      </td>
+    </tr>
+  </table>
+</p>
+
+*NOTE:* The values that relys after 0.1 on the bpp graph are the I-Frames.
+
+| Metric        | Our Codec        | DVC            |
+|---------------|------------------|----------------|
+| Avg BPP       | ≈ 0.043          | ≈ 0.05        |
+| Avg PSNR      | ≈ 34.9 dB        | ≈ 34.2 dB     |
+| SSIM          | ≈ 0.95           | ≈ 0.94        |
 
 
 ## References
