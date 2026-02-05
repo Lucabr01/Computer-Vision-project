@@ -984,7 +984,7 @@ Our model achieves an average **PSNR of 37.36 dB** with a bitrate of less than *
 <p align="center">
   <img src="images/vimeo_final_test/3_sota_comparison.png" alt="SOTA Comparison" width="80%">
   <br>
-  <em>Fig 1: Rate-Distortion comparison against the State-of-the-Art DVC baseline. Our model (Red Star) achieves a massive gain in fidelity.</em>
+  <em>Fig 1: Rate-Distortion comparison against the DVC baseline. Our model (Red Star) achieves a massive gain in fidelity.</em>
 </p>
 
 ### Stability and Robustness
