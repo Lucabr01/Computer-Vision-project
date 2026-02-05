@@ -954,6 +954,11 @@ We used the public dataset available on kaggle that contains a majority of the s
 | Avg PSNR      | ≈ 34.9 dB        | ≈ 34.2 dB     |
 | SSIM          | ≈ 0.95           | ≈ 0.94        |
 
+These results show that our codec achieves higher reconstruction quality (+ 0.7 dB) while using fewer bits compared to DVC.
+Despite operating at a lower average bitrate, it produces a higher PSNR and better SSIM, indicating a more efficient use of the latent information.
+This highlights the effectiveness of the refinement networks and the temporal context, which significantly reduce the residual error and improve compression efficiency beyond the original DVC architecture.
+
+## Vimeo90k Test Set.
 
 ## References
 
