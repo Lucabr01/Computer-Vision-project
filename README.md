@@ -928,6 +928,22 @@ To prevent error propagation, we periodically insert a new I-frame every 30 fram
 
 This strategy limits drift over long sequences while maintaining the benefits of motion-based compression for most of the video.
 
+First lets compare the number of parameters:
+
+## 🔢 Model Parameter Count
+
+| Model                          | Total Parameters |
+|--------------------------------|------------------:|
+| Motion VAE (MVAE)             | 10,135,298 |
+| Motion Refinement Network     |    602,755 |
+| Residual VAE (RVAE)           |  4,518,659 |
+| Residual Refinement Network   |    448,195 |
+| Adaptive Refinement Network   |    825,155 |
+| RAFT Small (Optical Flow)     |    990,162 |
+| **TOTAL**         | **17,520,224** |
+
+While the [DVC official implementation](https://github.com/GuoLusjtu/DVC/tree/master/TestDemo/VideoCodec) has around 24M parameters.
+
 
 ## UVG dataset test
 
