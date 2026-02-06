@@ -1033,7 +1033,35 @@ About future works on this topics the main change on architecture are **Visual T
 
 Here we list every training stage along with their code. For the full explaination of the architecture and training approach check out the respectives sections.
 
+### Motion VAE
 
+[Kaggle Notebook - Motion Vae Stage 1](https://www.kaggle.com/code/lucabrunetti/motion-vae-stage-1)
+[Kaggle Notebook - Motion Vae Stage 2](https://www.kaggle.com/code/lucabrunetti/motion-vae-stage-2) 
+Stage 3 was run on runpod ( i lost the code when terminating the pod :( ), the pipeline is the same as the stage 2 but with a t+4 frame jump iinsted of t+2.
+
+### Motion Post-Processing NET
+
+[Kaggle Notebook - Motion Refinement Net](https://www.kaggle.com/code/lucabrunetti2/motion-post-processing-net)
+
+### Residual VAE
+
+[Kaggle Notebook - Residual VAE Hard Mode](https://www.kaggle.com/code/danielebracoloni/residualvae-hard-mode-training)
+
+### Residual Post-Processing NET
+
+[Kaggle Notebook - Residual Residual Training](https://www.kaggle.com/code/danielebracoloni/residual-motionvae-post-process)
+
+### Adaptive Refinement NET
+
+Full training code on the **_TrainScriptss_** directory as `TrainAdaptiveNET.ipynb`.
+
+Every net weights [HERE](https://www.kaggle.com/datasets/lucabrunetti2/flowbranch)
+
+### Joint training 
+
+The full training code can be found in the **_TrinScriptss_** directory as `JointTrainRTX5090.ipynb`
+
+The final model weights can be found [HERE](https://www.kaggle.com/datasets/lucabrunetti2/codecjtrainweigths)
 
 
 
