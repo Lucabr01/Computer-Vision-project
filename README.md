@@ -565,7 +565,7 @@ So for our final training configuration we designed a three stage training:
 
 ### First stage 
 
-To initialize the weights of the net we set a `max_flow` of 50.0 allowing the model to learn a sufficiently wide range of motion during the early training phase. Following the strategy adopted in DVC, the value of $\lambda$ in the rate–distortion loss was progressively increased from 256 up to 1024. In the original DVC work, the final value reaches 2048, prioritizing reconstruction quality over bitrate. 
+To initialize the weights of the net we set a `max_flow` of 50.0 allowing the model to learn a sufficiently wide range of motion during the early training phase. Following the strategy adopted in DVC, the value of $\lambda$ in the rate–distortion loss was progressively increased from 256 up to 1024. In the original DVC work, they train four different models with different lambda values. 
 
 In our case, we intentionally stop at 1024 to favor lower bitrate compression. This choice is motivated by the fact that the flow will later be refined by the subsequent post-processing network, which compensates for the slightly more aggressive compression applied at this stage.
 
@@ -703,6 +703,8 @@ The full training code can be found in the **_TrinScriptss_** directory as `Join
 
 The final model weights can be found [HERE](https://www.kaggle.com/datasets/lucabrunetti2/codecjtrainweigths)
 
+*NOTE:* In the original paper, the joint training of **DVC** lasted for more than **7 days**, while our joint training was limited to about **32 hours**. This constraint was mainly due to the cost–reward trade-off and limited computational resources. Because of these limitations, we were not able to extensively explore different configurations and had to commit to a single setup for a restricted training time.  
+Even though our model already achieves better results than DVC at low bitrate (see next section), we believe that longer training and further hyperparameter exploration would likely lead to additional improvements and better convergence.
 
 # 4 Tests and Results
 
@@ -909,7 +911,7 @@ Even againts the SOTA image compressor model, our codec is able to get more then
 
 ## DVG comparison
 
-Now lets compare our results against DVC on the Vimeo's testset and the [Ultra Video Group dataset](https://ultravideo.fi/dataset.html). This last one is a widely used 1080x720 raw video set, only made to test codecs. 
+Now lets compare our results against DVC on the the [Ultra Video Group dataset](https://ultravideo.fi/dataset.html). This one is a widely used 1080x720 raw video set, only made to test codecs. 
 
 **_NOTE_**: In order to start processing a video sequence, the 4-frame history buffer must be initialized. To do so, we use the `cheng2020` image compression model provided by CompressAI to encode the first four frames.
 
@@ -958,7 +960,7 @@ We used the public dataset available on kaggle that contains a majority of the s
   </table>
 </p>
 
-*NOTE:* The values that relys after 0.1 on the bpp graph are the I-Frames.
+*NOTE:* The values that relys after 0.1 on the bpp graph are I-Frames or frames where the camera is moving vary fast (critical occlusions, so the residual has to do all the job).
 
 | Metric        | Our Codec        | DVC            |
 |---------------|------------------|----------------|
@@ -970,6 +972,8 @@ These results show that our codec achieves higher reconstruction quality (+ 0.7 
 Despite operating at a lower average bitrate, it produces a higher PSNR and better SSIM, indicating a more efficient use of the latent information.
 This highlights the effectiveness of the refinement networks and the temporal context, which significantly reduce the residual error and improve compression efficiency beyond the original DVC architecture.
 
+*NOTE:* DVC in his paper evaluate on HEVC too, for us with limited computational resources it is not feasible. The UVG test on our limited GPU runned for more than 20h at 0.43 fps (more than 42000 frames to be compressed). Not to mention that CompressAI's entropy model does not run well on gpu so the task get slower and slower. 
+
 ## 4.1 Final Evaluation on Vimeo-90k
 
 We performed a final evaluation of our proposed architecture on the entire **Vimeo-90k Test Set** (7,824 sequences). The results demonstrate that our architecture possesses an exceptional capability for preserving structural details even at extremely low bitrates, significantly outperforming the baseline DVC architecture.
@@ -978,8 +982,8 @@ Our model achieves an average **PSNR of 37.36 dB** with a bitrate of less than *
 
 | Method | Dataset | Average BPP | Average PSNR (dB) |
 | :--- | :--- | :--- | :--- |
-| DVC (Baseline) | Vimeo-90k | ~0.10 | ~34.50 |
-| **Ours (Joint Training)** | **Vimeo-90k** | **0.098** | **37.36**  |
+| DVC  | Vimeo-90k | ~0.10 | ~34.50 |
+| **Ours** | **Vimeo-90k** | **0.098** | **37.36**  |
 
 <p align="center">
   <img src="images/vimeo_final_test/3_sota_comparison.png" alt="SOTA Comparison" width="80%">
