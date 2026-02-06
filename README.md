@@ -8,6 +8,8 @@
    1. [Networks initialization](#31-networks-initialization)
    2. [Joint training](#32-joint-training)
 4. [Tests and Results](#4-tests-and-results)
+5. [Conclusion](#5-conclusion)
+
 
 
 # 1. Introduction
@@ -1020,6 +1022,18 @@ We provide visual examples to demonstrate the effectiveness of the **Adaptive Ma
 
 * **Performance:** 43.19 dB @ 0.033 bpp.
 * **Analysis:** In this challenging low-light scenario, the model achieves **Visually Lossless** quality (43+ dB) with a compression ratio of approximately **700:1** (0.033 bpp). The **Amplified Error Map** (center-right) is nearly black, indicating near-perfect reconstruction. The model intelligently suppresses noise in the dark background, focusing entirely on the subject's movement.
+
+# 5. Conclusion
+
+In the end we proved the robustness of the Motion-Residual based codecs against well known and SOTA lossy image compression models (talking about video frame reconstruction), obtaining more than a 3x compression rate while reconstructing at the same quality with our codec. Following **M-LVC** we designed an architecture capable to handle *DVC*'s weakness such as lack of temporal contests, occlusion handling and number of parameters (circa 30% less). Designed an adaptive mask to handle small details and occlusion weakness that is easy to compute and way faster than other occlusion handling masks such as the [*Forward-Backward approach*](https://arxiv.org/abs/1708.05355). On the same test on UVG, we beat DVC and other well know algorithm such as **H.264 (AVC)** at low-rate compression level; obtaining both higher PSNR and better compression. 
+
+About future works on this topics the main change on architecture are **Visual Trasformers**. The attention mechanism is game changing on predicting the reconstructed frame and occlusion handling.
+
+--- 
+
+Here we list every training stage along with their code. For the full explaination of the architecture and training approach check out the respectives sections.
+
+
 
 
 
