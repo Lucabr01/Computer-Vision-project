@@ -978,18 +978,11 @@ This highlights the effectiveness of the refinement networks and the temporal co
 
 We performed a final evaluation of our proposed architecture on the entire **Vimeo-90k Test Set** (7,824 sequences). The results demonstrate that our architecture possesses an exceptional capability for preserving structural details even at extremely low bitrates, significantly outperforming the baseline DVC architecture.
 
-Our model achieves an average **PSNR of 37.36 dB** with a bitrate of less than **0.1 bpp**. This represents a gain of approximately **+2.8 dB** over the standard DVC baseline at similar bitrates.
+Our model achieves an average **PSNR of 37.36 dB** with a bitrate of less than **0.1 bpp**. 
 
-| Method | Dataset | Average BPP | Average PSNR (dB) |
-| :--- | :--- | :--- | :--- |
-| DVC  | Vimeo-90k | ~0.10 | ~34.50 |
-| **Ours** | **Vimeo-90k** | **0.098** | **37.36**  |
+*(Note: Direct comparison with DVC on this specific dataset is omitted as standard baselines primarily benchmark on UVG/HEVC datasets).*
 
-<p align="center">
-  <img src="images/vimeo_final_test/3_sota_comparison.png" alt="SOTA Comparison" width="80%">
-  <br>
-  <em>Fig 1: Rate-Distortion comparison against the DVC baseline. Our model (Red Star) achieves a massive gain in fidelity.</em>
-</p>
+
 
 ### Stability and Robustness
 To verify the robustness of our codec, we analyzed the distribution of reconstruction quality across the entire test set.
