@@ -1036,7 +1036,9 @@ Here we list every training stage along with their code. For the full explainati
 ### Motion VAE
 
 [Kaggle Notebook - Motion Vae Stage 1](https://www.kaggle.com/code/lucabrunetti/motion-vae-stage-1)
+
 [Kaggle Notebook - Motion Vae Stage 2](https://www.kaggle.com/code/lucabrunetti/motion-vae-stage-2) 
+
 Stage 3 was run on runpod ( i lost the code when terminating the pod :( ), the pipeline is the same as the stage 2 but with a t+4 frame jump iinsted of t+2.
 
 ### Motion Post-Processing NET
