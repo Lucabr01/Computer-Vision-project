@@ -708,7 +708,7 @@ Even though our model already achieves better results than DVC at low bitrate (s
 
 # 4 Tests and Results
 
-First lets run our codec on two frames to see its behavior. Given $$t-1$$ we need to reconstruct the frame $$t$$; we can see that the the girl pictured moves both arms and the right leg:
+Lets start with running our codec on two consecutive frames to visualize its behavior. Given the reconstructed frame at time $t-1$, the goal is to reconstruct the frame at time $t$. In this example, the girl moves both arms and her right leg, while a strong camera motion causes a large occlusion on the right side of the scene (top right trees):
 
 <p align="center">
   <table>
