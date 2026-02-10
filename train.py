@@ -1,3 +1,6 @@
+# Logica training joint 
+
+
 """
 Main training script for the Neural Video Compression framework.
 
