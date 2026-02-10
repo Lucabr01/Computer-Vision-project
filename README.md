@@ -605,7 +605,7 @@ The latent is compressed more than 880x from the flow at32 RAFT's output sti man
 
 ## Motion Refinement NET
 
-The network to postprocess the decompressed flow was trained to minimize the warped frame MSE w.r.t the groundtruth frame. Training was done for 20 epochs between kaggle's P100 and the RTX 4090 (circa 18h). The dataset used was the Septuplets in order to give the
+The network to postprocess the decompressed flow was trained to minimize the warped frame MSE w.r.t the groundtruth frame. Training was done for 20 epochs between kaggle's P100 and the RTX 4090 (circa 18h). The dataset used was the Septuplets in order to give the 4-frames tempora context.
 
 **Training Code:**  [Kaggle Notebook - Motion Refinement Net](https://www.kaggle.com/code/lucabrunetti2/motion-post-processing-net)
 
